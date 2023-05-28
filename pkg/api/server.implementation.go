@@ -1,16 +1,46 @@
 package api
 
 import (
+	"context"
+	"expvar"
 	"net/http"
+	"net/http/pprof"
 	"sync"
 
 	"github.com/labstack/echo/v4"
+	"go.opentelemetry.io/otel/attribute"
 	"gorm.io/gorm"
 )
 
 type ServerImplementation struct {
 	Lock sync.Mutex
 	DB   *gorm.DB
+}
+
+// Options represent optional parameters.
+type Options struct {
+	corsOrigin string
+}
+
+// WithCORS provides configuration options for CORS.
+func WithCORS(origin string) func(opts *Options) {
+	return func(opts *Options) {
+		opts.corsOrigin = origin
+	}
+}
+
+func DebugStandardLibraryMux() *http.ServeMux {
+	mux := http.NewServeMux()
+
+	// Register all the standard library debug endpoints.
+	mux.HandleFunc("/debug/pprof/", pprof.Index)
+	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	mux.Handle("/debug/vars", expvar.Handler())
+
+	return mux
 }
 
 func (s *ServerImplementation) GetMovieByName(ctx echo.Context, name string) error {
@@ -32,6 +62,12 @@ func (s *ServerImplementation) GetMovieByYear(ctx echo.Context, year int64) erro
 	if tx.Error != nil {
 		return ctx.JSON(http.StatusBadRequest, tx.Error)
 	}
+
+	ctxn := context.Background()
+
+	ctxn, span := AddSpan(ctxn, "business.sys.database.exec", attribute.String("query", tx))
+	defer span.End()
+
 	return ctx.JSON(http.StatusOK, movies)
 }
 

@@ -11,8 +11,12 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"time"
 	"strings"
+	"context"
 	"github.com/lib/pq"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/sdk/trace"
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
@@ -56,6 +60,14 @@ type ServerInterface interface {
 	GetMovieByYear(ctx echo.Context, year int64) error
 }
 
+// Values represent state for each request.
+type Values struct {
+	TraceID    string
+	Tracer     trace.Tracer
+	Now        time.Time
+	StatusCode int
+}
+
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
@@ -64,6 +76,14 @@ type ServerInterfaceWrapper struct {
 // UploadMovie converts echo context to params.
 func (w *ServerInterfaceWrapper) UploadMovie(ctx echo.Context) error {
 	var err error
+	// ctxn := ctx.Request().Context()
+
+	// span := trace.SpanFromContext(ctxn)
+	// defer span.End()
+
+	ctxnw := context.Background()
+	ctxnw, span := AddSpan(ctxnw, "foundation.web.response", attribute.Int("status", http.StatusAccepted))
+	defer span.End()
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.UploadMovie(ctx)
@@ -257,4 +277,19 @@ func GetSwagger() (swagger *openapi3.T, err error) {
 		return
 	}
 	return
+}
+
+// AddSpan adds a OpenTelemetry span to the trace and context.
+func AddSpan(ctx context.Context, spanName string, keyValues ...attribute.KeyValue) (context.Context, trace.Span) {
+	v, ok := ctx.Value(1).(*Values)
+	if !ok || v.Tracer == "nil" {
+		return ctx, trace.SpanFromContext(ctx)
+	}
+
+	ctx, span := v.Tracer.Start(ctx, spanName)
+	for _, kv := range keyValues {
+		span.SetAttributes(kv)
+	}
+
+	return ctx, span
 }
