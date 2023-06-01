@@ -22,10 +22,6 @@ data:
       jaeger:
         endpoint: "jaeger-collector.observability.svc.cluster.local:14250"
         insecure: true
-      prometheus:
-        endpoint: 0.0.0.0:8889
-        namespace: "testapp"
-      logging:
 
     service:
       extensions: [health_check]
@@ -34,11 +30,6 @@ data:
           receivers: [otlp]
           processors: []
           exporters: [jaeger]
-
-        metrics:
-          receivers: [otlp]
-          processors: []
-          exporters: [prometheus, logging]
 ---
 apiVersion: v1
 kind: Service
@@ -55,10 +46,6 @@ spec:
       protocol: TCP
       targetPort: 4317
       nodePort: 30080
-    - name: metrics # Default endpoint for metrics.
-      port: 8889
-      protocol: TCP
-      targetPort: 8889
   selector:
     component: otel-collector
   type: NodePort
@@ -81,10 +68,6 @@ spec:
   replicas: 1 #TODO - adjust this to your own requirements
   template:
     metadata:
-      annotations:
-        prometheus.io/path: "/metrics"
-        prometheus.io/port: "8889"
-        prometheus.io/scrape: "true"
       labels:
         app: opentelemetry
         component: otel-collector
