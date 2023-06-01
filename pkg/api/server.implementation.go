@@ -65,8 +65,7 @@ func (s *ServerImplementation) GetMovieByYear(ctx echo.Context, year int64) erro
 
 	ctxn := context.Background()
 
-	ctxn, span := AddSpan(ctxn, "business.sys.database.exec", attribute.String("query", tx))
-	defer span.End()
+	ctxn = AddSpan(ctxn, "business.sys.database.exec", attribute.String("query", tx.Name()))
 
 	return ctx.JSON(http.StatusOK, movies)
 }

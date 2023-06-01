@@ -20,7 +20,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -157,7 +157,6 @@ func startTracing(serviceName string, reporterURI string, probability float64) (
 			attribute.Int64("ID", id),
 		)),
 	)
-	return tp, nil
 
 	// I can only get this working properly using the singleton :(
 	otel.SetTracerProvider(tp)
