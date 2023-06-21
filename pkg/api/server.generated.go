@@ -16,6 +16,7 @@ import (
 	"github.com/lib/pq"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
@@ -73,7 +74,7 @@ func (w *ServerInterfaceWrapper) UploadMovie(ctx echo.Context) error {
 	// defer span.End()
 
 	ctxnw := context.Background()
-	ctxnw = AddSpan(ctxnw, "foundation.web.response", attribute.Int("status", http.StatusAccepted))
+	AddSpan(ctxnw, "foundation.web.response", attribute.Int("status", http.StatusAccepted))
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.UploadMovie(ctx)
@@ -270,13 +271,8 @@ func GetSwagger() (swagger *openapi3.T, err error) {
 }
 
 // AddSpan adds a OpenTelemetry span to the trace and context.
-func AddSpan(ctx context.Context, spanName string, keyValues ...attribute.KeyValue) (context.Context) {
+func AddSpan(ctx context.Context, spanName string, keyValues ...attribute.KeyValue) {
 	tracer := otel.Tracer("test-tracer")
-	ctx, span := tracer.Start(ctx, spanName)
-	for _, kv := range keyValues {
-		span.SetAttributes(kv)
-	}
+	ctx, span := tracer.Start(ctx, spanName, trace.WithSpanKind(trace.SpanKindClient))
 	defer span.End()
-
-	return ctx
 }

@@ -7,6 +7,9 @@ docker-push:
 deploy:
 	cd chart && helm upgrade --install movie-catalogue . --set=image.tag="v3" --set=postgres.password=$$(kubectl get secrets movie-db-cluster-app -o jsonpath="{.data.password}" | base64 --decode) && cd ../
 
+add-ingress:
+	minikube addons enable ingress
+
 deploy-cert-manager:
 	kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
 

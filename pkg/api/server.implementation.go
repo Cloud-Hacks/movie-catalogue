@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"expvar"
 	"net/http"
 	"net/http/pprof"
@@ -63,9 +62,9 @@ func (s *ServerImplementation) GetMovieByYear(ctx echo.Context, year int64) erro
 		return ctx.JSON(http.StatusBadRequest, tx.Error)
 	}
 
-	ctxn := context.Background()
+	// ctxn := context.Background()
 
-	ctxn = AddSpan(ctxn, "business.sys.database.exec", attribute.String("query", tx.Name()))
+	AddSpan(ctx.Request().Context(), "business.sys.database.exec", attribute.String("query Get db", tx.Name()))
 
 	return ctx.JSON(http.StatusOK, movies)
 }
@@ -84,5 +83,8 @@ func (s *ServerImplementation) UploadMovie(ctx echo.Context) error {
 	if tx.Error != nil {
 		return tx.Error
 	}
+
+	AddSpan(ctx.Request().Context(), "business.sys.database.exec", attribute.String("query Upload db", tx.Name()))
+
 	return ctx.JSON(http.StatusOK, "")
 }

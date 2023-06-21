@@ -34,14 +34,14 @@ var (
 	postgresHost     *string
 	postgresPort     = "5432"
 	build            = "develop"
-	once sync.Once
+	once             sync.Once
 )
 
 const (
 	service     = "trace-sales-api"
 	environment = "production"
 	id          = 1
-	url         = "http://localhost:14268/api/traces"
+	url         = "https://localhost:14268/api/traces"
 )
 
 func main() {
@@ -97,6 +97,15 @@ func main() {
 	if err != nil {
 		fmt.Errorf("starting tracing: %w", err)
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	tr := traceProvider.Tracer("component-main")
+
+	_, span := tr.Start(ctx, "foo")
+	defer span.End()
+	api.AddSpan(ctx, "business.sys.main.exec", attribute.String("foo", "main exec"))
+
 	defer traceProvider.Shutdown(context.Background())
 
 	// Construct the mux for the debug calls.
