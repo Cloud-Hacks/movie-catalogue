@@ -33,3 +33,28 @@ curl -X POST http://localhost:8081/movie -H 'Content-Type: application/json' -d 
 ```
 curl localhost:8081/movies/year/2016
 ```
+
+## How to connect psql
+
+```
+sudo apt update
+
+sudo apt install postgresql postgresql-contrib
+
+sudo service postgresql.service start
+
+sudo -i su postgres
+
+postgres@codespaces- createuser --interactive
+
+Output
+Enter name of role to add: app
+Shall the new role be a superuser? (y/n) y
+
+createdb movie
+
+sudo adduser app
+
+sudo su app
+psql
+psql -d movie
