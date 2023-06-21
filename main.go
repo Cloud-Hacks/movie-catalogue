@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
@@ -18,6 +19,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
@@ -32,6 +34,7 @@ var (
 	postgresHost     *string
 	postgresPort     = "5432"
 	build            = "develop"
+	once sync.Once
 )
 
 const (
@@ -140,6 +143,13 @@ func main() {
 
 // startTracing configure open telemetery to be used with zipkin.
 func startTracing(serviceName string, reporterURI string, probability float64) (*trace.TracerProvider, error) {
+	once.Do(func() {
+		otel.SetTextMapPropagator(
+			propagation.NewCompositeTextMapPropagator(
+				propagation.TraceContext{},
+				propagation.Baggage{},
+			))
+	})
 
 	// Create the Jaeger exporter
 	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(url)))
