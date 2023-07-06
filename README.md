@@ -51,11 +51,13 @@ Output
 Enter name of role to add: app
 Shall the new role be a superuser? (y/n) y
 
-createdb movie
+postgres@codespaces- createdb movie
 
 sudo adduser app
 
-psql -c "ALTER USER app WITH PASSWORD 'your_password';"
+New PW: hiclass@12
+
+postgres@codespaces- psql -c "ALTER USER app WITH PASSWORD 'your_password';"
 
 sudo su app
 psql
